@@ -1,11 +1,11 @@
 package com.themof.app
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.*
 import android.graphics.drawable.GradientDrawable
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -13,20 +13,22 @@ import android.view.Gravity
 import android.widget.*
 
 class EditorActivity : Activity() {
-    private var src: Bitmap? = null
+    private lateinit var ev: EditView
+    private lateinit var bri: SeekBar
+    private lateinit var con: SeekBar
+    private lateinit var sat: SeekBar
     private var filter: FloatArray? = null
-    private lateinit var iv: ImageView
-    private val bri = SeekBar(this)
-    private val con = SeekBar(this)
-    private val sat = SeekBar(this)
+    private val palette = intArrayOf(Color.WHITE, Color.BLACK, 0xFFFF3B30.toInt(), 0xFFFFD60A.toInt(), 0xFF00E5FF.toInt(), 0xFFFF4FD8.toInt(), 0xFF30D158.toInt())
+    private var ci = 0
+    private val sizes = floatArrayOf(4f, 8f, 16f, 28f)
+    private var si = 1
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    private fun sepia() = floatArrayOf(.393f,.769f,.189f,0f,0f, .349f,.686f,.168f,0f,0f, .272f,.534f,.131f,0f,0f, 0f,0f,0f,1f,0f)
     private val filters: List<Pair<String, FloatArray?>> = listOf(
         "Original" to null,
         "B&W" to floatArrayOf(.299f,.587f,.114f,0f,0f, .299f,.587f,.114f,0f,0f, .299f,.587f,.114f,0f,0f, 0f,0f,0f,1f,0f),
-        "Sepia" to sepia(),
+        "Sepia" to floatArrayOf(.393f,.769f,.189f,0f,0f, .349f,.686f,.168f,0f,0f, .272f,.534f,.131f,0f,0f, 0f,0f,0f,1f,0f),
         "Vintage" to floatArrayOf(.9f,.5f,.1f,0f,0f, .3f,.8f,.1f,0f,0f, .2f,.3f,.5f,0f,0f, 0f,0f,0f,1f,0f),
         "Cool" to floatArrayOf(.9f,0f,0f,0f,0f, 0f,1f,0f,0f,0f, 0f,0f,1.15f,0f,10f, 0f,0f,0f,1f,0f),
         "Warm" to floatArrayOf(1.15f,0f,0f,0f,10f, 0f,1f,0f,0f,0f, 0f,0f,.85f,0f,0f, 0f,0f,0f,1f,0f),
@@ -47,19 +49,29 @@ class EditorActivity : Activity() {
         return m
     }
 
-    private fun upd() { iv.colorFilter = ColorMatrixColorFilter(matrix()) }
+    private fun upd() { ev.cf = ColorMatrixColorFilter(matrix()) }
 
-    private fun btn(label: String, click: () -> Unit) = TextView(this).apply {
+    private fun btn(label: String, click: (TextView) -> Unit) = TextView(this).apply {
         text = label; setTextColor(Color.WHITE); textSize = 14f; gravity = Gravity.CENTER
         setPadding(dp(16), dp(10), dp(16), dp(10))
         background = GradientDrawable().apply { cornerRadius = dp(20).toFloat(); setColor(0x26FFFFFF) }
-        setOnClickListener { click() }
+        setOnClickListener { click(this) }
         layoutParams = LinearLayout.LayoutParams(-2, -2).apply { rightMargin = dp(8) }
+    }
+
+    private fun scroller(row: LinearLayout) = HorizontalScrollView(this).apply {
+        isHorizontalScrollBarEnabled = false; addView(row)
+        setPadding(0, dp(4), 0, dp(4))
     }
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         window.statusBarColor = Color.TRANSPARENT
+        ev = EditView(this)
+        bri = SeekBar(this).apply { max = 200; progress = 100 }
+        con = SeekBar(this).apply { max = 200; progress = 100 }
+        sat = SeekBar(this).apply { max = 200; progress = 100 }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(12), dp(40), dp(12), dp(8))
@@ -68,32 +80,62 @@ class EditorActivity : Activity() {
         val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
         top.addView(TextView(this).apply { text = "Studio"; textSize = 26f; setTextColor(Color.WHITE) }, LinearLayout.LayoutParams(0, -2, 1f))
         top.addView(btn("Pick") { pick() })
-        top.addView(btn("Rotate") { rotate() })
         top.addView(btn("Save") { save() })
         root.addView(top)
 
-        iv = ImageView(this).apply { scaleType = ImageView.ScaleType.FIT_CENTER }
-        root.addView(iv, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8); bottomMargin = dp(8) })
+        root.addView(ev, LinearLayout.LayoutParams(-1, 0, 1f).apply { topMargin = dp(8); bottomMargin = dp(4) })
+
+        val tools = LinearLayout(this)
+        tools.addView(btn("Draw") { v ->
+            ev.mode = if (ev.mode == 1) 0 else 1
+            v.text = if (ev.mode == 1) "Draw ✓" else "Draw"
+        })
+        val colorBtn = btn("●") { v -> ci = (ci + 1) % palette.size; ev.color = palette[ci]; v.setTextColor(palette[ci]) }
+        colorBtn.setTextColor(palette[0]); colorBtn.textSize = 20f
+        tools.addView(colorBtn)
+        tools.addView(btn("Brush 8") { v -> si = (si + 1) % sizes.size; ev.brush = sizes[si]; v.text = "Brush ${sizes[si].toInt()}" })
+        tools.addView(btn("Text") { addText() })
+        tools.addView(btn("Undo") { ev.undo() })
+        tools.addView(btn("Crop") { crop() })
+        tools.addView(btn("Rotate") { ev.rotate() })
+        root.addView(scroller(tools))
 
         val row = LinearLayout(this)
         for ((n, f) in filters) row.addView(btn(n) { filter = f; upd() })
-        root.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(row) })
+        root.addView(scroller(row))
 
         val l = object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { upd() }
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) {}
         }
-        bri.max = 200; bri.progress = 100
-        con.max = 200; con.progress = 100
-        sat.max = 200; sat.progress = 100
         for ((n, sb) in listOf("Brightness" to bri, "Contrast" to con, "Saturation" to sat)) {
-            root.addView(TextView(this).apply { text = n; setTextColor(0xCCFFFFFF.toInt()); setPadding(0, dp(6), 0, 0) })
+            root.addView(TextView(this).apply { text = n; setTextColor(0xCCFFFFFF.toInt()); textSize = 12f })
             sb.setOnSeekBarChangeListener(l)
             root.addView(sb)
         }
         setContentView(root)
         pick()
+    }
+
+    private fun addText() {
+        if (ev.bmp == null) return
+        val input = EditText(this).apply { hint = "Text likho"; setTextColor(Color.WHITE); setHintTextColor(0x88FFFFFF.toInt()) }
+        AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK).setTitle("Add text").setView(input)
+            .setPositiveButton("Add") { _, _ ->
+                val s = input.text.toString()
+                if (s.isNotBlank()) {
+                    ev.addText(s)
+                    Toast.makeText(this, "Photo pe drag karke text hilao", Toast.LENGTH_SHORT).show()
+                }
+            }.setNegativeButton("Cancel", null).show()
+    }
+
+    private fun crop() {
+        val names = arrayOf("1:1", "4:5", "3:4", "16:9", "9:16")
+        val r = floatArrayOf(1f, 4f / 5f, 3f / 4f, 16f / 9f, 9f / 16f)
+        AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK).setTitle("Crop ratio")
+            .setItems(names) { _, i -> ev.crop(r[i]) }.show()
     }
 
     private fun pick() {
@@ -102,35 +144,24 @@ class EditorActivity : Activity() {
 
     override fun onActivityResult(rc: Int, res: Int, d: Intent?) {
         super.onActivityResult(rc, res, d)
-        val u: Uri = d?.data ?: return
+        if (res != RESULT_OK) return
+        val u = d?.data ?: return
         try {
             val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             contentResolver.openInputStream(u)?.use { BitmapFactory.decodeStream(it, null, o) }
             var ss = 1
             while (o.outWidth / ss > 2048 || o.outHeight / ss > 2048) ss *= 2
             val o2 = BitmapFactory.Options().apply { inSampleSize = ss }
-            src = contentResolver.openInputStream(u)?.use { BitmapFactory.decodeStream(it, null, o2) }
-            iv.setImageBitmap(src)
+            ev.bmp = contentResolver.openInputStream(u)?.use { BitmapFactory.decodeStream(it, null, o2) }
             upd()
         } catch (e: Exception) {
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun rotate() {
-        val s = src ?: return
-        val m = Matrix().apply { postRotate(90f) }
-        src = Bitmap.createBitmap(s, 0, 0, s.width, s.height, m, true)
-        iv.setImageBitmap(src)
-        upd()
-    }
-
     private fun save() {
-        val s = src ?: run { Toast.makeText(this, "Pehle photo pick karo", Toast.LENGTH_SHORT).show(); return }
+        val out = ev.render() ?: run { Toast.makeText(this, "Pehle photo pick karo", Toast.LENGTH_SHORT).show(); return }
         try {
-            val out = Bitmap.createBitmap(s.width, s.height, Bitmap.Config.ARGB_8888)
-            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { colorFilter = ColorMatrixColorFilter(matrix()) }
-            Canvas(out).drawBitmap(s, 0f, 0f, p)
             val name = "Themof_${System.currentTimeMillis()}"
             if (Build.VERSION.SDK_INT >= 29) {
                 val cv = ContentValues().apply {
