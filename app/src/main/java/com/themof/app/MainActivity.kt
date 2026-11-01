@@ -85,6 +85,7 @@ class MainActivity : Activity() {
         favBtn.setOnClickListener { favOnly = !favOnly; favBtn.text = if (favOnly) "♥" else "♡"; refresh() }
         head.addView(favBtn)
         head.addView(chip("+") { create() })
+        head.addView(chip("🎨") { startActivity(Intent(this, EditorActivity::class.java)) })
 
         search = EditText(this).apply {
             hint = "Search themes"; setHintTextColor(0x88FFFFFF.toInt()); setTextColor(Color.WHITE)
