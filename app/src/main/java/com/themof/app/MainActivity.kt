@@ -34,7 +34,7 @@ class MainActivity : Activity() {
     private fun favs(): MutableSet<String> = HashSet(prefs.getStringSet("favs", emptySet())!!)
 
     override fun onCreate(b: Bundle?) {
-        super.onCreate(b)
+        super.onCreate(b); Setup.run(this)
         prefs = getSharedPreferences("themof", MODE_PRIVATE)
         for (i in 0 until 120) {
             val h = (i % 12) * 30f
