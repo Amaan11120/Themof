@@ -39,5 +39,5 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity-alias>
-    </application>
+    <activity android:name=".VideoEditorActivity" android:exported="false"/></application>
 </manifest>

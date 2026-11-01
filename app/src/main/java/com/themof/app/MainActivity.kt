@@ -143,6 +143,7 @@ class MainActivity : Activity() {
         item("✨\nThemes") { sv.smoothScrollTo(0, 0) }
         item("🎨\nStudio") { startActivity(Intent(this, EditorActivity::class.java)) }
         item("⚡\nCharge") { startActivity(Intent(this, ChargingActivity::class.java)) }
+        item("🎬\nVideo") { startActivity(Intent(this, VideoEditorActivity::class.java)) }
         item("➕\nCreate") { create() }
 
         root.addView(head)
