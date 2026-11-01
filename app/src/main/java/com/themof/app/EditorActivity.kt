@@ -78,6 +78,7 @@ class EditorActivity : Activity() {
             background = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(0xFF1A1236.toInt(), 0xFF07070F.toInt()))
         }
         val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        top.addView(ImageView(this).apply { setImageResource(R.drawable.logo) }, LinearLayout.LayoutParams(dp(36), dp(36)).apply { rightMargin = dp(10) })
         top.addView(TextView(this).apply { text = "Studio"; textSize = 26f; setTextColor(Color.WHITE) }, LinearLayout.LayoutParams(0, -2, 1f))
         top.addView(btn("Pick") { pick() })
         top.addView(btn("Save") { save() })

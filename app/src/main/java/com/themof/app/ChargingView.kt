@@ -41,7 +41,7 @@ class ChargingView(c: Context) : View(c) {
             intArrayOf(0xFF1B1140.toInt(), 0xFF0A0A18.toInt(), 0xFF000000.toInt()),
             floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
         sweep = SweepGradient(w / 2f, h * 0.42f,
-            intArrayOf(0xFF00E5FF.toInt(), 0xFF7C4DFF.toInt(), 0xFFFF4FD8.toInt(), 0xFF00E5FF.toInt()), null)
+            intArrayOf(0xFF00E5FF.toInt(), 0xFF4D5BFF.toInt(), 0xFFB026FF.toInt(), 0xFF00E5FF.toInt()), null)
     }
 
     override fun onDraw(cv: Canvas) {
@@ -62,7 +62,7 @@ class ChargingView(c: Context) : View(c) {
         ring.shader = null
         for (i in 0..2) {
             val f = (t * 2f + i / 3f) % 1f
-            ring.color = 0xFF7C4DFF.toInt(); ring.alpha = ((1f - f) * 90).toInt(); ring.strokeWidth = 3f
+            ring.color = 0xFF4D5BFF.toInt(); ring.alpha = ((1f - f) * 90).toInt(); ring.strokeWidth = 3f
             cv.drawCircle(cx, cy, r * (1.05f + f * 0.9f), ring)
         }
 
