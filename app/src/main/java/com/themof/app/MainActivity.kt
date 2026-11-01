@@ -8,6 +8,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -18,27 +20,47 @@ class MainActivity : Activity() {
     private val hues = listOf("Red","Orange","Amber","Lime","Green","Mint","Cyan","Sky","Blue","Violet","Pink","Rose")
     private val moods = listOf("Neon","Pastel","Dark","Sunset","Ocean","Candy","Royal","Soft","Bold","Night")
     private val sat = floatArrayOf(1f,.35f,.8f,.9f,.7f,.6f,.85f,.4f,1f,.75f)
-    private val val_ = floatArrayOf(1f,1f,.45f,.95f,.8f,1f,.6f,.9f,.9f,.3f)
+    private val vl = floatArrayOf(1f,1f,.45f,.95f,.8f,1f,.6f,.9f,.9f,.3f)
 
     private val themes = List(120) { i ->
         val h = (i % 12) * 30f
         val m = i / 12
         T(
             "${moods[m]} ${hues[i % 12]}",
-            Color.HSVToColor(floatArrayOf(h, sat[m], val_[m])),
-            Color.HSVToColor(floatArrayOf((h + 50f) % 360f, sat[m], val_[m] * 0.55f)),
+            Color.HSVToColor(floatArrayOf(h, sat[m], vl[m])),
+            Color.HSVToColor(floatArrayOf((h + 50f) % 360f, sat[m], vl[m] * 0.55f)),
             GradientDrawable.Orientation.values()[i % 8]
         )
     }
+
+    private lateinit var grid: GridLayout
+    private var cell = 0
 
     private fun draw(t: T) = GradientDrawable(t.o, intArrayOf(t.c1, t.c2))
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
-        val w = resources.displayMetrics.widthPixels
-        val cell = w / 2 - 24
-        val grid = GridLayout(this).apply { columnCount = 2; setPadding(12, 40, 12, 12) }
-        for (t in themes) {
+        cell = resources.displayMetrics.widthPixels / 2 - 24
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(12, 40, 12, 0) }
+        val search = EditText(this).apply { hint = "Search themes (e.g. neon, blue)" }
+        grid = GridLayout(this).apply { columnCount = 2 }
+        root.addView(search)
+        root.addView(ScrollView(this).apply { addView(grid) })
+        setContentView(root)
+        show(themes)
+        search.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                val q = s.toString().trim().lowercase()
+                show(themes.filter { it.name.lowercase().contains(q) })
+            }
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+        })
+    }
+
+    private fun show(list: List<T>) {
+        grid.removeAllViews()
+        for (t in list) {
             val f = FrameLayout(this)
             f.background = draw(t).apply { cornerRadius = 28f }
             val tv = TextView(this).apply {
@@ -50,7 +72,6 @@ class MainActivity : Activity() {
             val lp = GridLayout.LayoutParams().apply { width = cell; height = (cell * 1.6).toInt(); setMargins(12, 12, 12, 12) }
             grid.addView(f, lp)
         }
-        setContentView(ScrollView(this).apply { addView(grid) })
     }
 
     private fun preview(t: T) {
@@ -60,18 +81,20 @@ class MainActivity : Activity() {
             addView(v, FrameLayout.LayoutParams(-1, 800))
         }
         AlertDialog.Builder(this).setTitle(t.name).setView(box)
-            .setPositiveButton("Apply Wallpaper") { _, _ -> apply(t) }
-            .setNegativeButton("Cancel", null).show()
+            .setPositiveButton("Home") { _, _ -> apply(t, WallpaperManager.FLAG_SYSTEM) }
+            .setNeutralButton("Lock") { _, _ -> apply(t, WallpaperManager.FLAG_LOCK) }
+            .setNegativeButton("Both") { _, _ -> apply(t, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK) }
+            .show()
     }
 
-    private fun apply(t: T) {
+    private fun apply(t: T, flag: Int) {
         val dm = resources.displayMetrics
         val bmp = Bitmap.createBitmap(dm.widthPixels, dm.heightPixels, Bitmap.Config.ARGB_8888)
         val d = draw(t)
         d.setBounds(0, 0, bmp.width, bmp.height)
         d.draw(Canvas(bmp))
         try {
-            WallpaperManager.getInstance(this).setBitmap(bmp)
+            WallpaperManager.getInstance(this).setBitmap(bmp, null, true, flag)
             Toast.makeText(this, "Wallpaper set!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
