@@ -28,5 +28,5 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-    </application>
+    <activity-alias android:name=".IconPack" android:targetActivity=".MainActivity" android:exported="true" android:label="Themof Icons"><intent-filter><action android:name="com.novalauncher.THEME"/><action android:name="org.adw.launcher.THEMES"/><category android:name="android.intent.category.DEFAULT"/></intent-filter></activity-alias></application>
 </manifest>
