@@ -14,7 +14,7 @@ class EditView(c: Context) : View(c) {
     var color = Color.WHITE
     var brush = 8f
     private class Stroke(val path: Path, val color: Int, val w: Float)
-    private class Tx(val s: String, var x: Float, var y: Float, val size: Float, val color: Int)
+    private class Tx(val s: String, var x: Float, var y: Float, var size: Float, val color: Int)
     private val strokes = ArrayList<Stroke>()
     private val texts = ArrayList<Tx>()
     private val order = ArrayList<Any>()
@@ -80,6 +80,8 @@ class EditView(c: Context) : View(c) {
         val t = Tx(s, b.width / 2f, b.height / 2f, maxOf(b.width, b.height) / 12f, color)
         texts.add(t); order.add(t); mode = 2; invalidate()
     }
+
+    fun scaleLast(f: Float) { texts.lastOrNull()?.let { it.size = (it.size * f).coerceIn(10f, 2000f); invalidate() } }
 
     fun undo() {
         val o = order.removeLastOrNull() ?: return

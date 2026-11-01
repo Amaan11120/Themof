@@ -97,6 +97,8 @@ class EditorActivity : Activity() {
         tools.addView(btn("Brush 8") { v -> si = (si + 1) % sizes.size; ev.brush = sizes[si]; v.text = "Brush ${sizes[si].toInt()}" })
         tools.addView(btn("Text") { addText() })
         tools.addView(btn("Sticker") { Stickers.pick(this, ev) })
+        tools.addView(btn("Size +") { ev.scaleLast(1.25f) })
+        tools.addView(btn("Size -") { ev.scaleLast(0.8f) })
         tools.addView(btn("Undo") { ev.undo() })
         tools.addView(btn("Crop") { crop() })
         tools.addView(btn("Rotate") { ev.rotate() })
