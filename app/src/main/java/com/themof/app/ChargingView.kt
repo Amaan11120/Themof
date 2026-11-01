@@ -10,6 +10,9 @@ import java.util.*
 
 class ChargingView(c: Context) : View(c) {
     var target = 0f
+    private val logo: Bitmap? = try { BitmapFactory.decodeResource(c.resources, R.drawable.logo) } catch (e: Exception) { null }
+    private val lr = RectF()
+    private val lp = Path()
     private var shown = 0f
     private var t = 0f
     private val rnd = Random(7)
@@ -97,6 +100,15 @@ class ChargingView(c: Context) : View(c) {
         p.color = 0xFFFFE66D.toInt()
         p.alpha = (170 + 85 * Math.sin(t * Math.PI * 4)).toInt().coerceIn(0, 255)
         cv.drawPath(bolt, p)
+        logo?.let { b ->
+            val ls = r * 0.45f; val top = h * 0.07f
+            lr.set(cx - ls / 2, top, cx + ls / 2, top + ls)
+            lp.reset(); lp.addRoundRect(lr, ls * 0.22f, ls * 0.22f, Path.Direction.CW)
+            cv.save(); cv.clipPath(lp)
+            p.shader = null; p.alpha = 255
+            cv.drawBitmap(b, null, lr, p)
+            cv.restore()
+        }
 
         txt.color = Color.WHITE; txt.alpha = 255
         txt.typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL)
