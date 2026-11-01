@@ -24,9 +24,9 @@ data class T(val name: String, val c1: Int, val c2: Int, val o: GradientDrawable
 
 class MainActivity : Activity() {
     private val hues = listOf("Red","Orange","Amber","Lime","Green","Mint","Cyan","Sky","Blue","Violet","Pink","Rose")
-    private val moods = listOf("Neon","Pastel","Dark","Sunset","Ocean","Candy","Royal","Soft","Bold","Night")
-    private val sat = floatArrayOf(1f,.35f,.8f,.9f,.7f,.6f,.85f,.4f,1f,.75f)
-    private val vl = floatArrayOf(1f,1f,.45f,.95f,.8f,1f,.6f,.9f,.9f,.3f)
+    private val moods = listOf("Neon","Pastel","Dark","Sunset","Ocean","Candy","Royal","Soft","Bold","Night","Aurora","Lava","Forest","Galaxy","Peach","Steel","Glow","Dusk","Retro","Ice")
+    private val sat = floatArrayOf(1f,.35f,.8f,.9f,.7f,.6f,.85f,.4f,1f,.75f,.7f,.95f,.75f,.85f,.4f,.2f,1f,.6f,.8f,.25f)
+    private val vl = floatArrayOf(1f,1f,.45f,.95f,.8f,1f,.6f,.9f,.9f,.3f,.9f,.85f,.55f,.5f,1f,.75f,1f,.7f,.85f,1f)
 
     private val all = ArrayList<T>()
     private val chips = ArrayList<TextView>()
@@ -53,13 +53,13 @@ class MainActivity : Activity() {
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = 0xFF030308.toInt()
 
-        for (i in 0 until 120) {
+        for (i in 0 until 240) {
             val h = (i % 12) * 30f
             val m = i / 12
             all.add(T(
                 "${moods[m]} ${hues[i % 12]}",
                 Color.HSVToColor(floatArrayOf(h, sat[m], vl[m])),
-                Color.HSVToColor(floatArrayOf((h + 50f) % 360f, sat[m], vl[m] * 0.55f)),
+                Color.HSVToColor(floatArrayOf((h + (if (m < 10) 50f else 120f)) % 360f, sat[m], vl[m] * 0.55f)),
                 GradientDrawable.Orientation.values()[i % 8]
             ))
         }
